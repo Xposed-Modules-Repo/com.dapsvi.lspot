@@ -37,26 +37,40 @@ android {
             }
         }
     }
+
+    applicationVariants.all {
+        outputs.all {
+            if (this is com.android.build.gradle.internal.api.BaseVariantOutputImpl) {
+                outputFileName = "app-release.apk"
+            }
+        }
+    }
 }
 
 dependencies {
     compileOnly(files("libs/xposed-api-stub.jar"))
 }
 
-// Task: produce SHA-256 checksum for the signed release APK
+// Task: produce SHA-256 + MD5 checksums for the signed release APK
 tasks.register("checksums") {
     dependsOn("assembleRelease")
 
     doLast {
-        val apk = layout.buildDirectory.file("outputs/apk/release/app-release-unsigned.apk").get().asFile
+        val apkDir = layout.buildDirectory.dir("outputs/apk/release").get().asFile
+        val apk = File(apkDir, "app-release.apk")
+
         val sha256 = MessageDigest.getInstance("SHA-256")
             .digest(apk.readBytes())
             .joinToString("") { "%02x".format(it) }
-        val shaFile = File(apk.parentFile, "app-release-unsigned.apk.sha256")
-        println("Writing checksum to: ${shaFile.absolutePath}")
-        shaFile.writeText("$sha256  ${apk.name}\n")
-        println("File exists: ${shaFile.exists()}")
+        val md5 = MessageDigest.getInstance("MD5")
+            .digest(apk.readBytes())
+            .joinToString("") { "%02x".format(it) }
+
+        File(apkDir, "app-release.apk.sha256").writeText("$sha256  ${apk.name}\n")
+        File(apkDir, "app-release.apk.md5").writeText("$md5  ${apk.name}\n")
+
         println("Signed APK: ${apk.absolutePath}")
         println("SHA-256: $sha256")
+        println("MD5:     $md5")
     }
 }
