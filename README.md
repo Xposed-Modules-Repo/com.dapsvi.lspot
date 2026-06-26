@@ -13,7 +13,7 @@ Hooks `OkHttpClient.Builder.build()` at runtime and injects a dynamic intercepto
 
 ## Install
 
-1. Download the [latest release](https://codeberg.org/dapsvi/LSpot/releases/latest)
+1. Download the [latest release](https://github.com/Xposed-Modules-Repo/com.dapsvi.lspot/releases/latest)
 2. Install the APK
 3. Enable the module in LSPosed/Vector and scope it to `com.spotify.music`
 4. Force-stop Spotify and reopen it
