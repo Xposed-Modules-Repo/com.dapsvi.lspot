@@ -73,51 +73,51 @@ public class MainHook implements IXposedHookLoadPackage {
                         new XC_MethodHook() {
                             @Override
                             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                                Object client = param.getResult();
-                                if (client == null) return;
-
-                                Object blocker = java.lang.reflect.Proxy.newProxyInstance(
-                                    lpparam.classLoader,
-                                    new Class<?>[]{interceptorClass},
-                                    (proxy, method, args) -> {
-                                        if ("intercept".equals(method.getName()) && args != null && args.length == 1) {
-                                            Object chain = args[0];
-                                            Method reqMethod = chain.getClass().getMethod("request");
-                                            Object request = reqMethod.invoke(chain);
-                                            Method urlMethod = request.getClass().getMethod("url");
-                                            Object httpUrl = urlMethod.invoke(request);
-                                            String url = httpUrl.toString();
-
-                                            for (Pattern p : BLOCKED_PATTERNS) {
-                                                if (p.matcher(url).matches()) {
-                                                    Log.i(TAG, "Blocked: " + url);
-                                                    return emptyResponse(request, lpparam.classLoader);
-                                                }
-                                            }
-
-                                            Method proceedMethod = chain.getClass().getMethod("proceed", request.getClass());
-                                            return proceedMethod.invoke(chain, request);
-                                        }
-                                        String n = method.getName();
-                                        if (n.equals("toString")) return "SpotifyAdBlocker";
-                                        if (n.equals("hashCode")) return System.identityHashCode(proxy);
-                                        if (n.equals("equals")) return proxy == args[0];
-                                        return null;
-                                    });
-
                                 try {
-                                    client.getClass().getMethod("addInterceptor", interceptorClass)
-                                        .invoke(client, blocker);
-                                    XposedBridge.log(TAG + ": Interceptor added");
-                                } catch (NoSuchMethodException e) {
+                                    Object client = param.getResult();
+                                    if (client == null) return;
+
+                                    Object blocker = java.lang.reflect.Proxy.newProxyInstance(
+                                        lpparam.classLoader,
+                                        new Class<?>[]{interceptorClass},
+                                        (proxy, method, args) -> {
+                                            try {
+                                                if ("intercept".equals(method.getName()) && args != null && args.length == 1) {
+                                                    Object chain = args[0];
+                                                    Method reqMethod = chain.getClass().getMethod("request");
+                                                    Object request = reqMethod.invoke(chain);
+                                                    Method urlMethod = request.getClass().getMethod("url");
+                                                    Object httpUrl = urlMethod.invoke(request);
+                                                    String url = httpUrl.toString();
+                                                    for (Pattern p : BLOCKED_PATTERNS) {
+                                                        if (p.matcher(url).matches()) {
+                                                            Log.i(TAG, "Blocked: " + url);
+                                                            return emptyResponse(request, lpparam.classLoader);
+                                                        }
+                                                    }
+                                                    Method proceedMethod = chain.getClass().getMethod("proceed", request.getClass());
+                                                    return proceedMethod.invoke(chain, request);
+                                                }
+                                            } catch (Throwable ignored) {}
+                                            String n = method.getName();
+                                            if (n.equals("toString")) return "SpotifyAdBlocker";
+                                            if (n.equals("hashCode")) return System.identityHashCode(proxy);
+                                            if (n.equals("equals")) return proxy == args[0];
+                                            return null;
+                                        });
+
                                     try {
-                                        client.getClass().getMethod("addNetworkInterceptor", interceptorClass)
+                                        client.getClass().getMethod("addInterceptor", interceptorClass)
                                             .invoke(client, blocker);
-                                        XposedBridge.log(TAG + ": Net interceptor added");
-                                    } catch (NoSuchMethodException e2) {
-                                        Log.w(TAG, "No addInterceptor on OkHttpClient");
+                                        XposedBridge.log(TAG + ": Interceptor added");
+                                    } catch (NoSuchMethodException ignored) {
+                                        try {
+                                            client.getClass().getMethod("addNetworkInterceptor", interceptorClass)
+                                                .invoke(client, blocker);
+                                            XposedBridge.log(TAG + ": Net interceptor added");
+                                        } catch (NoSuchMethodException ignored2) {}
                                     }
-                                }
+                                } catch (Throwable ignored) {}
                             }
                         }
                     );
@@ -139,41 +139,45 @@ public class MainHook implements IXposedHookLoadPackage {
                             new XC_MethodHook() {
                                 @Override
                                 protected void afterHookedMethod(MethodHookParam param) throws Throwable {
-                                    Object client = param.getResult();
-                                    if (client == null) return;
-                                    Object blocker = java.lang.reflect.Proxy.newProxyInstance(
-                                        lpparam.classLoader,
-                                        new Class<?>[]{interceptorClass},
-                                        (proxy, method, args) -> {
-                                            if ("intercept".equals(method.getName()) && args != null && args.length == 1) {
-                                                Object chain = args[0];
-                                                Method reqMethod = chain.getClass().getMethod("request");
-                                                Object request = reqMethod.invoke(chain);
-                                                Method urlMethod = request.getClass().getMethod("url");
-                                                Object httpUrl = urlMethod.invoke(request);
-                                                String url = httpUrl.toString();
-                                                for (Pattern p : BLOCKED_PATTERNS) {
-                                                    if (p.matcher(url).matches()) {
-                                                        Log.i(TAG, "Blocked: " + url);
-                                                        return emptyResponse(request, lpparam.classLoader);
-                                                    }
-                                                }
-                                                Method proceedMethod = chain.getClass().getMethod("proceed", request.getClass());
-                                                return proceedMethod.invoke(chain, request);
-                                            }
-                                            String n = method.getName();
-                                            if (n.equals("toString")) return "SpotifyAdBlocker";
-                                            if (n.equals("hashCode")) return System.identityHashCode(proxy);
-                                            if (n.equals("equals")) return proxy == args[0];
-                                            return null;
-                                        });
                                     try {
-                                        client.getClass().getMethod("addInterceptor", interceptorClass).invoke(client, blocker);
-                                    } catch (NoSuchMethodException e) {
+                                        Object client = param.getResult();
+                                        if (client == null) return;
+                                        Object blocker = java.lang.reflect.Proxy.newProxyInstance(
+                                            lpparam.classLoader,
+                                            new Class<?>[]{interceptorClass},
+                                            (proxy, method, args) -> {
+                                                try {
+                                                    if ("intercept".equals(method.getName()) && args != null && args.length == 1) {
+                                                        Object chain = args[0];
+                                                        Method reqMethod = chain.getClass().getMethod("request");
+                                                        Object request = reqMethod.invoke(chain);
+                                                        Method urlMethod = request.getClass().getMethod("url");
+                                                        Object httpUrl = urlMethod.invoke(request);
+                                                        String url = httpUrl.toString();
+                                                        for (Pattern p : BLOCKED_PATTERNS) {
+                                                            if (p.matcher(url).matches()) {
+                                                                Log.i(TAG, "Blocked: " + url);
+                                                                return emptyResponse(request, lpparam.classLoader);
+                                                            }
+                                                        }
+                                                        Method proceedMethod = chain.getClass().getMethod("proceed", request.getClass());
+                                                        return proceedMethod.invoke(chain, request);
+                                                    }
+                                                } catch (Throwable ignored) {}
+                                                String n = method.getName();
+                                                if (n.equals("toString")) return "SpotifyAdBlocker";
+                                                if (n.equals("hashCode")) return System.identityHashCode(proxy);
+                                                if (n.equals("equals")) return proxy == args[0];
+                                                return null;
+                                            });
                                         try {
-                                            client.getClass().getMethod("addNetworkInterceptor", interceptorClass).invoke(client, blocker);
-                                        } catch (NoSuchMethodException e2) {}
-                                    }
+                                            client.getClass().getMethod("addInterceptor", interceptorClass).invoke(client, blocker);
+                                        } catch (NoSuchMethodException ignored) {
+                                            try {
+                                                client.getClass().getMethod("addNetworkInterceptor", interceptorClass).invoke(client, blocker);
+                                            } catch (NoSuchMethodException ignored2) {}
+                                        }
+                                    } catch (Throwable ignored) {}
                                 }
                             }
                         );
@@ -210,17 +214,20 @@ public class MainHook implements IXposedHookLoadPackage {
                         new XC_MethodHook() {
                             @Override
                             protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                                Object request = param.args[0];
-                                Method urlMethod = request.getClass().getMethod("url");
-                                Object httpUrl = urlMethod.invoke(request);
-                                String url = httpUrl.toString();
-                                for (Pattern p : BLOCKED_PATTERNS) {
-                                    if (p.matcher(url).matches()) {
-                                        Log.i(TAG, "Blocked: " + url);
-                                        param.setResult(emptyResponse(request, lpparam.classLoader));
-                                        return;
+                                try {
+                                    Object request = param.args[0];
+                                    if (request == null) return;
+                                    Method urlMethod = request.getClass().getMethod("url");
+                                    Object httpUrl = urlMethod.invoke(request);
+                                    String url = httpUrl.toString();
+                                    for (Pattern p : BLOCKED_PATTERNS) {
+                                        if (p.matcher(url).matches()) {
+                                            Log.i(TAG, "Blocked: " + url);
+                                            param.setResult(emptyResponse(request, lpparam.classLoader));
+                                            return;
+                                        }
                                     }
-                                }
+                                } catch (Throwable ignored) {}
                             }
                         }
                     );
@@ -242,19 +249,18 @@ public class MainHook implements IXposedHookLoadPackage {
                 hookConstructors.invoke(null, urlClass, new XC_MethodHook() {
                     @Override
                     protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                        String url = param.args[0] != null ? param.args[0].toString() : null;
-                        if (url == null) return;
-                        // Only modify URL(String) constructor, not other overloads
-                        if (param.args.length >= 1 && param.args[0] instanceof String) {
-                            String str = (String) param.args[0];
-                            for (Pattern p : BLOCKED_PATTERNS) {
-                                if (p.matcher(str).matches()) {
-                                    Log.i(TAG, "URL blocked: " + str);
-                                    param.args[0] = "http://127.0.0.1/blocked";
-                                    break;
+                        try {
+                            if (param.args.length >= 1 && param.args[0] instanceof String) {
+                                String str = (String) param.args[0];
+                                for (Pattern p : BLOCKED_PATTERNS) {
+                                    if (p.matcher(str).matches()) {
+                                        Log.i(TAG, "URL blocked: " + str);
+                                        param.args[0] = "http://127.0.0.1/blocked";
+                                        break;
+                                    }
                                 }
                             }
-                        }
+                        } catch (Throwable ignored) {}
                     }
                 });
                 XposedBridge.log(TAG + ": Hooked java.net.URL constructors (JVM level)");
