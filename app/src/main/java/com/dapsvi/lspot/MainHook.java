@@ -244,11 +244,15 @@ public class MainHook implements IXposedHookLoadPackage {
                     protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
                         String url = param.args[0] != null ? param.args[0].toString() : null;
                         if (url == null) return;
-                        for (Pattern p : BLOCKED_PATTERNS) {
-                            if (p.matcher(url).matches()) {
-                                Log.i(TAG, "URL blocked: " + url);
-                                param.args[0] = "http://127.0.0.1/blocked";
-                                break;
+                        // Only modify URL(String) constructor, not other overloads
+                        if (param.args.length >= 1 && param.args[0] instanceof String) {
+                            String str = (String) param.args[0];
+                            for (Pattern p : BLOCKED_PATTERNS) {
+                                if (p.matcher(str).matches()) {
+                                    Log.i(TAG, "URL blocked: " + str);
+                                    param.args[0] = "http://127.0.0.1/blocked";
+                                    break;
+                                }
                             }
                         }
                     }
