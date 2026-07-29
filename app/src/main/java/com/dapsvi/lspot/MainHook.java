@@ -206,33 +206,37 @@ public class MainHook implements IXposedHookLoadPackage {
                 }
 
                 if (ricMethod != null) {
-                    XposedHelpers.findAndHookMethod(
-                        "okhttp3.internal.http.RealInterceptorChain",
-                        lpparam.classLoader,
-                        ricMethod,
-                        requestClass,
-                        new XC_MethodHook() {
-                            @Override
-                            protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
-                                try {
-                                    Object request = param.args[0];
-                                    if (request == null) return;
-                                    Method urlMethod = request.getClass().getMethod("url");
-                                    Object httpUrl = urlMethod.invoke(request);
-                                    String url = httpUrl.toString();
-                                    for (Pattern p : BLOCKED_PATTERNS) {
-                                        if (p.matcher(url).matches()) {
-                                            Log.i(TAG, "Blocked: " + url);
-                                            param.setResult(emptyResponse(request, lpparam.classLoader));
-                                            return;
+                    try {
+                        XposedHelpers.findAndHookMethod(
+                            "okhttp3.internal.http.RealInterceptorChain",
+                            lpparam.classLoader,
+                            ricMethod,
+                            requestClass,
+                            new XC_MethodHook() {
+                                @Override
+                                protected void beforeHookedMethod(MethodHookParam param) throws Throwable {
+                                    try {
+                                        Object request = param.args[0];
+                                        if (request == null) return;
+                                        Method urlMethod = request.getClass().getMethod("url");
+                                        Object httpUrl = urlMethod.invoke(request);
+                                        String url = httpUrl.toString();
+                                        for (Pattern p : BLOCKED_PATTERNS) {
+                                            if (p.matcher(url).matches()) {
+                                                Log.i(TAG, "Blocked: " + url);
+                                                param.setResult(emptyResponse(request, lpparam.classLoader));
+                                                return;
+                                            }
                                         }
-                                    }
-                                } catch (Throwable ignored) {}
+                                    } catch (Throwable ignored) {}
+                                }
                             }
-                        }
-                    );
-                    XposedBridge.log(TAG + ": Hooked RealInterceptorChain." + ricMethod + "() (dynamic)");
-                    hooked = true;
+                        );
+                        XposedBridge.log(TAG + ": Hooked RealInterceptorChain." + ricMethod + "() (dynamic)");
+                        hooked = true;
+                    } catch (Throwable ricHookError) {
+                        XposedBridge.log(TAG + ": RIC hook failed (inner): " + ricHookError.getMessage());
+                    }
                 } else {
                     XposedBridge.log(TAG + ": No matching method found on RealInterceptorChain");
                 }

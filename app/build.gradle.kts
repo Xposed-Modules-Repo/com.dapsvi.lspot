@@ -12,8 +12,8 @@ android {
         minSdk = 27
         targetSdk = 33
         applicationId = "com.dapsvi.lspot"
-        versionCode = 4
-        versionName = "1.1.2"
+        versionCode = 5
+        versionName = "1.1.3"
     }
 
     signingConfigs {
